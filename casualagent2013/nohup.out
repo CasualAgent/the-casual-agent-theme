@@ -1,0 +1,41 @@
+>>> Sass is watching for changes. Press Ctrl-C to stop.
+  overwrite css//style.css
+>>> Change detected to: /Users/rchong/dev/CasualAgent/workingCopies/themes/casualagent2013/sass/style.scss
+  overwrite css//style.css
+>>> Change detected to: /Users/rchong/dev/CasualAgent/workingCopies/themes/casualagent2013/sass/style.scss
+  overwrite css//style.css
+>>> Sass is watching for changes. Press Ctrl-C to stop.
+>>> Change detected to: /Users/rchong/dev/CasualAgent/workingCopies/themes/casualagent2013/sass/style.scss
+>>> Change detected to: /Users/rchong/dev/CasualAgent/workingCopies/themes/casualagent2013/sass/style.scss
+  overwrite css//style.css
+  overwrite css//style.css
+>>> Sass is watching for changes. Press Ctrl-C to stop.
+  overwrite css//style.css
+>>> Change detected to: /Users/rchong/dev/CasualAgent/workingCopies/themes/casualagent2013/sass/style.scss
+  overwrite css//style.css
+>>> Sass is watching for changes. Press Ctrl-C to stop.
+  overwrite ./style.css
+>>> Change detected to: /Users/rchong/dev/CasualAgent/workingCopies/themes/casualagent2013/sass/style.scss
+  overwrite ./style.css
+>>> Change detected to: /Users/rchong/dev/CasualAgent/workingCopies/themes/casualagent2013/sass/style.scss
+  overwrite css//style.css
+>>> Change detected to: /Users/rchong/dev/CasualAgent/workingCopies/themes/casualagent2013/sass/style.scss
+>>> Change detected to: /Users/rchong/dev/CasualAgent/workingCopies/themes/casualagent2013/sass/style.scss
+  overwrite css//style.css
+  overwrite ./style.css
+>>> Change detected to: /Users/rchong/dev/CasualAgent/workingCopies/themes/casualagent2013/sass/style.scss
+>>> Change detected to: /Users/rchong/dev/CasualAgent/workingCopies/themes/casualagent2013/sass/style.scss
+  overwrite ./style.css
+  overwrite css//style.css
+>>> Change detected to: /Users/rchong/dev/CasualAgent/workingCopies/themes/casualagent2013/sass/style.scss
+>>> Change detected to: /Users/rchong/dev/CasualAgent/workingCopies/themes/casualagent2013/sass/style.scss
+  overwrite css//style.css
+  overwrite ./style.css
+2013-08-15 19:44 fsevent_watch[20467] (CarbonCore.framework) server_gone_StreamRef_callback: register_with_server: ERROR: f2d_register_rpc() => (ipc/mig) server died (-308)
+2013-08-15 19:44 fsevent_watch[20440] (CarbonCore.framework) server_gone_StreamRef_callback: ERROR: FSEvents_connect() => Unknown service name (1102)
+2013-08-15 19:44 fsevent_watch[20467] (CarbonCore.framework) server_gone_StreamRef_callback: re-registering with server failed and returned -308 (f2d port 0x0)
+2013-08-15 19:44 fsevent_watch[20440] (CarbonCore.framework) server_gone_StreamRef_callback: failed to reconnect to server! (kr 0x44e)
+SignalException: SIGTERM
+  Use --trace for backtrace.
+SignalException: SIGTERM
+  Use --trace for backtrace.
