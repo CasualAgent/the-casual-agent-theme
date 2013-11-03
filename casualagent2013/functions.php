@@ -6,6 +6,7 @@
 	require_once("lib/simple_html_dom.php");
 	require_once("cls/cPostMeta.php");
 	require_once("cls/cCasualAgentPost.php");
+	require_once("cls/cCasualAgentImg.php");
 	require_once("cfg/menu_categories.cfg.php");
 	
 	
@@ -772,7 +773,7 @@
 				'post_mime_type'=>'image',
 				'post_status'=>'inherit',
 				'post_parent'=>$post->ID,
-				'meta_query'=>array(array('key' => CA_META_PREFIX."_attachment_type", 'value'=>'carousel'))
+				'meta_query'=>array(array('key' => CA_META_PREFIX."_img_type", 'value'=>'carousel'))
 			);
 			
 			$at_qry = new WP_Query($args);	
@@ -962,21 +963,62 @@
 		
 	function set_ca_featured_status(){
 		
-		$ca = cCasualAgentPostMeta::GetObj($_REQUEST['post_ID']);
-		if(is_null($ca)){
-			return false;
+		$ca = new cCasualAgentPost($_REQUEST['post_ID']);
+		
+		$val = $_REQUEST['val'];
+		
+		if(is_string($val) && !($val == 'yes' || $val =='no')){
+			echo json_encode(array('err'=>'invalid value'));
+			die();	
 		}
 		
-		$val =  $_REQUEST['val'];
-
-		$ca->set_meta('_is_featured', $val, false);
-		
-		echo json_encode(array('_is_featured' => $ca->get_meta('_is_featured'), 'req'=>$_REQUEST, 'obj'=>$ca->get_meta()));
+		$res = array();
+		$res['meta'] = $ca->setFeatured($val);
+		$res['req'] = $_REQUEST;
+		echo json_encode($res);
 		die();
 		
 	}
 	
-	function setup_ca_featured_post(){
+	function set_ca_carousel_img(){
+		
+		$post_ID = $_REQUEST['post_ID'];
+		$img_ID = $_REQUEST['img_ID'];
+		$img = new cCasualAgentImg($img_ID);
+	
+		
+		if($post_ID == 0){	
+			$parent = $img->getParent();
+			if($parent){
+			$meta = $parent->getMeta('_featured_meta');
+			if(is_array($meta) && isset($meta['img'])){
+				$meta['img'] = null;
+				$parent->setMeta('_featured_meta',$meta);
+			}
+			}
+			$img->detach();
+		}else{
+			$parent = $img->getParent();
+			if($parent){
+				if($img->getMeta('_img_type') == 'carousel'){
+					$parent->setFeatured(array('img'=>0));
+				}	
+			}
+				
+			$img->attach($post_ID, 'carousel');
+			$parent = $img->getParent();
+			if($parent){
+				$parent->setFeatured(array('img'=>$img->ID));
+			}
+		}
+		
+		echo json_encode(array('parent'=>$img->getParent(), 'img'=>$img->data));
+		die();
+
+	}
+	
+	
+	/*function setup_ca_featured_post(){
 		$post_ID = $_REQUEST['post_ID'];
 		$at = $_REQUEST['attachment'];
 		
@@ -1005,41 +1047,10 @@
 		die();
 		
 	}
-	add_action('wp_ajax_setup_ca_featured_post', 'setup_ca_featured_post');
+	add_action('wp_ajax_setup_ca_featured_post', 'setup_ca_featured_post');*/
 	
-	function set_ca_post_featured_status($post_id, $val){
-		if(!($post_id>0)){
-			return false;
-		}
-
-		$ca = cCasualAgent::GetObj($post_id);
-		
-		if(!($ca instanceof cCasualAgent)){
-			return false;
-		}
-		
-		switch($val){
-			case 'yes':
-					$ca->set_meta('_is_featured', 'yes');
-				break;		
-			case 'no':
-			
-				break;
-				
-			default:
-				if(is_bool($val)){
-					$val = ($val === true)?'yes':'no';
-					return set_ca_post_featured_status($post_id, $val);
-				}
-				
-		}
-	}
 	
-	function ajax_set_ca_post_featured_status(){
-		
-	}
-	
-	function post_attach_item(){
+/*	function post_attach_item(){
 		/* Request Format */
 		/*array(	
 				'action'=>'post_attach_item',
@@ -1065,7 +1076,7 @@
 	
 	
 	
-		$attachment = (array)$_REQUEST['attachment'];
+	/*	$attachment = (array)$_REQUEST['attachment'];
 		$parent = (array)$_REQUEST['parent'];
 		
 		if(!isset($attachment['ID'])){
@@ -1137,7 +1148,7 @@
 						fld=>val,
 						fld=>val
 					)));*/
-		$attachment_ID = $_REQUEST['attachment_ID'];
+	/*	$attachment_ID = $_REQUEST['attachment_ID'];
 
 		$at = cCasualAgentPostMeta::GetObj($attachment_ID);
 		$post_ID = $at->get_data('post_parent');
@@ -1149,7 +1160,7 @@
 		die();
 	}
 	
-	add_action('wp_ajax_post_detach_item', 'post_detach_item');
+	add_action('wp_ajax_post_detach_item', 'post_detach_item');*/
 	
 	
 	function get_post_json(){
@@ -1173,6 +1184,7 @@
 	}
 	
 	add_action('wp_ajax_set_ca_post_feature_status', 'set_ca_featured_status');
+	add_action('wp_ajax_set_ca_carousel_img', 'set_ca_carousel_img');
 	add_action('wp_ajax_set_ca_post_meta', 'set_ca_post_meta');
 	//add_action('wp_ajax_get_ca_post_meta', 'get_ca_post_meta');
 	add_action('wp_ajax_get_post_json', 'get_post_json');
