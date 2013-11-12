@@ -672,14 +672,14 @@
 	
 	
 	function _get_casual_agent_post_data_metabox($post, $metabox){
-		$o = cCasualAgentPostMeta::GetObj($post);
+		$o = new cCasualAgentPost($post);
 		
-		$meta = $o->get_meta('all');
-		$data = $o->get_data('all');
+		$meta = $o->featured_meta;
+		$data = $o->post;
 		
 		
 		
-		$at = $o->get_attachments(array(array('key'=>'_attachment_type', 'value'=>array('none', 'gallery', 'display', 'carousel'))));
+		//$at = $o->get_attachments(array(array('key'=>'_attachment_type', 'value'=>array('none', 'gallery', 'display', 'carousel'))));
 		$thumb = get_post(get_post_thumbnail_id($post->ID));
 		echo "<pre>";
 		$meta['ID']=$o->ID;
@@ -759,69 +759,41 @@
 	
 	function _get_casual_agent_post_featured_metabox($post, $metabox){
 	
-	
-
-		$op = cCasualAgentPostMeta::GetObj($post->ID);
-		$isFeatured = (cCasualAgentPostMeta::_BOOL($op->get_meta('_is_featured', true)));
-		$isFeatured_chkBox = get_ca_featured_post_chkbox($op->ID, 'Featured Post');
+		
+		$op = new cCasualAgentPost($post);
+		$isFeatured = $op->getMeta('_is_featured');
+		$isFeatured = ($isFeatured == 'yes') ? true:false;
+		$isFeatured_chkBox = get_ca_featured_post_chkbox($op, 'Featured Post');
 
 		$html = array($isFeatured_chkBox);
 		
+		
 		if($isFeatured){	
-			$args = array(
-				'post_type'=>'attachment',
-				'post_mime_type'=>'image',
-				'post_status'=>'inherit',
-				'post_parent'=>$post->ID,
-				'meta_query'=>array(array('key' => CA_META_PREFIX."_img_type", 'value'=>'carousel'))
-			);
 			
-			$at_qry = new WP_Query($args);	
-			
-			$at = $at_qry->get_posts();
-			
-			//$at[] = (object)array('guid'=>"holder.js/300x224/text:Click to Attach Image", 'cls'=>'ca_attach');
-			
-			/*$banner = "<div class='ca_attachment ca_attachment_type_carousel'>
-								<img class='ca_attachment image-carousel' data-src='holder.js/996x508/text:Click to Attach Image' style='display:inline-block;height:auto!important;width:80%!important;'/>
-							</div>";*/
-			if(count($at)>=1){
-					
-					foreach($at as $idx => $a){
-						if($idx == 0){
-							$src = $a->guid;
+			$meta = $op->getMeta('_featured_meta');
+			print_r($meta);
+			if(is_array($meta) && isset($meta['img'])){
+				$a = new cCasualAgentImg($meta['img']);
+				$src = $a->guid;
 							//$cls = isset($a->cls)?"class=\"".$a->cls."\"":"";
 					
-							$html[] = "<div class='ca_attachment ca_attachment_type_carousel'>
-										<img src='$src' style='display:inline-block;width:100%;height:auto!important;'/>
-										<div class='actions'>
-											<a data-args='".json_encode(array('action'=>'post_detach_item', 'attachment_ID'=> $a->ID))."' class='action ajax_action'>Detach</a>
-										</div>
-									</div>";
-								
-						}else{
-							$ap = cCasualAgentPostMeta::GetObj($a);
-							$ap->set_data('post_parent', null);
-							$ap->set_meta('_attachment_type', null);
-							
-							$html[] = "<div class='ca_attachment ca_attachment_type_carousel detached'>
-										<img src='$src' style='display:inline-block;width:40%;height:auto!important;'/>
-										<div class='note detached'>was detached</div>
-									</div>";
-						}
-					}
-					
-						
+				$html[] = "<div class='ca_attachment ca_attachment_type_carousel'>
+							<img src='$src' style='display:inline-block;width:100%;height:auto!important;'/>
+							<div class='actions'>
+								<a data-args='".json_encode(array('action'=>'set_ca_carousel_img', 'img_ID'=> $a->ID, 'post_ID'=>0))."' class='action ajax_action'>Detach</a>
+							</div>
+						</div>";
 			}else{
-					$html[] = "
+				$html[] = "
 						<h1 style='color:red;font-size: 0.9em;position: absolute;top: -10px;right: 25px;'>NOT ACTIVE</h1>
 						<div class='note'>
 							<p>Please attachment image to be shown in the Carousel! Image should be formatted to be properly displayed in the Carousel (996w x  508h)
 								This post will not be active until a Carousel image is assigned!
 							</p>
 						</div>
-						<a title='Set Featured Carousel Image'  id='set-ca-featured-post-image' data-fn='ca_setup_featured_post' class='thickbox media_upload'>Set Featured Carousel Image</a>";		
-			}	
+						<a title='Set Featured Carousel Image'  id='set-ca-featured-post-image' data-fn='set_ca_carousel_img' class='thickbox media_upload'>Set Featured Carousel Image</a>";
+			}
+	
 		}else{
 			$html[] = "<h1 class='metabox_note'>Not Featured</h3>";
 		}
@@ -878,14 +850,12 @@
 	}
 	add_action( 'manage_posts_custom_column' , 'display_posts_featured_status', 10, 2 );
 	
-	function get_ca_featured_post_chkbox($post_id, $label = null){
+	function get_ca_featured_post_chkbox($ca, $label = null){
 
-		$ca = cCasualAgentPostMeta::GetObj($post_id);
-		
-		$checked = ($ca->get_meta('_is_featured') == 'yes')? "checked" : "";
+		$checked = ($ca->getMeta('_is_featured') == 'yes')? "checked" : "";
 	    
 	    $label = (!is_null($label) && !empty($label))?"<label for='ca_is_featured'>Featured Post</label>":"";
-	    return '<input name="ca_is_featured" class="chkbox_ca_is_featured" data-post-id="'.$post_id.'" type="checkbox" '.$checked.' />&nbsp;&nbsp;'.$label;
+	    return '<input name="ca_is_featured" class="chkbox_ca_is_featured" data-post-id="'.$ca->ID.'" type="checkbox" '.$checked.' />&nbsp;&nbsp;'.$label;
 	}
 	/* Add custom column to post list */
 	function add_posts_featured_status( $columns ) {
@@ -983,8 +953,19 @@
 	function set_ca_carousel_img(){
 		
 		$post_ID = $_REQUEST['post_ID'];
-		$img_ID = $_REQUEST['img_ID'];
-		$img = new cCasualAgentImg($img_ID);
+		
+		$img = isset($_REQUEST['img_ID'])?new cCasualAgentImg($_REQUEST['img_ID']):isset($_REQUEST['img_url']) ? get_attachment_by_url($_REQUEST['img_url']) : null;
+		
+		if(is_null($img) || empty($img)){
+			die('1');
+		}else if(is_array($img)){
+			$img = $img[0];
+		}
+		
+		
+		if(!(is_a($img, 'cCasualAgentAttachment') || is_subclass_of($img, 'cCasualAgentAttachment'))){
+			die('2');	
+		}
 	
 		
 		if($post_ID == 0){	
@@ -1017,8 +998,25 @@
 
 	}
 	
-	
-	/*function setup_ca_featured_post(){
+		function get_attachment_by_url($guid){
+			$args = array(
+				'guid'=>$guid,
+				'post_status'=>'any',
+				'post_type'=>'any',
+			);
+			
+			$qry = new WP_Query($args);
+			$res = $qry->get_posts();
+			
+			$arr = array();
+			foreach($res as $idx=> $wp){
+				$arr[] = cCasualAgentAttachment::Obj($wp);
+			}
+			
+			
+			
+			return $arr;
+		}	/*function setup_ca_featured_post(){
 		$post_ID = $_REQUEST['post_ID'];
 		$at = $_REQUEST['attachment'];
 		

@@ -2,7 +2,7 @@ var formfield = "";
 
 window.ca_media = window.ca_media || {handlers:{}};
 window.ca_media.handlers = window.ca_media.handlers || {};
-window.ca_media.handlers.ca_setup_featured_post =  function(html) {
+window.ca_media.handlers.set_ca_carousel_img =  function(html) {
     	
     	var $postID = jQuery('#post_ID') || false;
     	if(!$postID){
@@ -23,11 +23,9 @@ window.ca_media.handlers.ca_setup_featured_post =  function(html) {
 		console.debug(arguments);
 		
 		var args = {
-			action:'setup_ca_featured_post',
+			action:'set_ca_carousel_img',
 			post_ID:pID,
-			attachment:{
-				guid:imgurl,
-			}
+			img_url:imgurl,
 		}
 		
 		tb_remove();

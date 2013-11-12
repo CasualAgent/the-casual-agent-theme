@@ -10,6 +10,7 @@
 		protected $_tag_groups = null;
 		
 		protected static $_metaKey = array(
+			'_cls' => array('prefix'=>true, 'single'=>true, 'default'=>'cCasualAgentPost', 'opts'=>array('cCasualAgentPost'), 'post_type'=>array('attachment')),
 			'_is_featured'=>array('prefix'=>true, 'single'=>true, 'default'=>'no', 'opts'=>array('no', 'yes'), 'post_type'=>array('post')),
 			'_featured_meta'=>array('prefix'=>true, 'single'=>true, 'default'=>array('img'=>0), 'post_type'=>array('post'))
 		);
@@ -34,7 +35,6 @@
 		
 			$self::$_tax = get_taxonomies();
 			
-			
 			$self::$_cat_tag_groups = tag_groups_cloud(array("taxonomy"=>"category"), true);
 		}
 		
@@ -42,8 +42,9 @@
 			$self = get_called_class();
 			if(is_null($this->_categories)){
 				$catTerms = $this->_terms['category'];
-				
+				$catTerms = is_array($catTerms)?$catTerms:array();
 				$cats = array();
+				
 				foreach($catTerms as $term){
 					$cat = get_category_by_slug($term->slug);
 					$cats[$cat->cat_ID] = $cat;
@@ -67,7 +68,7 @@
 		}
 		
 		private function setTerms(){
-		$self = get_called_class();
+			$self = get_called_class();
 			if(is_null($this->_terms)){
 				$terms = wp_get_post_terms($this->_post->ID, $self::$_tax, array('fields'=>'all'));
 				$arr = array_fill_keys($self::$_tax, array());
@@ -245,6 +246,10 @@
 		}
 		
 		function getMeta($key){
+		
+			if($key == 'all'){
+				return get_post_meta($this->_post->ID);
+			}
 			$mKey = $this->getKeyName($key);
 			$self = get_called_class();
 			$val = get_post_meta($this->_post->ID, $mKey, $self::$_metaKey[$key]['single']);
@@ -253,7 +258,7 @@
 				return null;
 			}
 			
-			if(is_array($val)){
+			if(is_array($val) && !is_array($this->getMetaKeyCfg($key, 'default'))){
 				switch(count($val)){		
 					case 1:
 						return array_shift($val);
@@ -262,17 +267,74 @@
 					default:
 						return $val;
 				}
-			}
+			}	
 			
 			return $val;
 		}
 		
+		private function setAttachments(){
+			
+			$args = array(
+				'post_type'=>'attachment',
+				'post_status'=>'any',
+				'post_parent'=>$this->ID
+			);
+			
+			$res = get_children($args);			
+			
+			$set = array();
+			foreach($res as $at){
+				$set[] = cCasualAgentAttachment::Obj($at);
+			}
+			
+			$this->_attachments = $set;
+		}
+		
+		function getAttachments($params){
+			
+			$args = array(
+				'post_type'=>'attachment',
+				'post_status'=>'any',
+				'post_parent'=>$this->ID
+			);
+			
+			foreach($params as $key=>$val){
+				$args[$key] = $val;
+			}
+			
+			$ats = get_children($args);
+			
+			$set = array();
+			foreach($ats as $at){
+				$set[] = cCasualAgentAttachment::Obj($at);
+			}
+			
+			return $set;			
+		}
+		
+		function getMetaKeyCfg($key, $prop='all'){
+			$key = str_ireplace(CA_META_PREFIX, "", $key);
+			$self = get_called_class();
+			$val = null;
+			if($prop == 'all'){
+				$val = isset($self::$_metaKey[$key])?$self::$_metaKey[$key]:null;
+			}else{
+				$val = isset($self::$_metaKey[$key])?$self::$_metaKey[$key]:null;
+				$val = (is_array($val) && isset($val[$prop]))?$val[$prop]:null;
+			}
+			
+			return $val;
+		}
+				
 		function __get($prop){
 			
 			switch($prop){
 				case 'featured_meta':
 					$keys = array('_is_featured', '_featured_meta');
-					$ret = array_fill_keys($keys, array($this->getMeta('_is_featured'), $this->getMeta('_featured_meta')));
+					$ret = array_fill_keys($keys, array());
+					foreach($keys as $key){
+						$ret[$key] = $this->getMeta($key);
+					}
 					return $ret;
 				case 'categories':
 						return $this->getCategories();

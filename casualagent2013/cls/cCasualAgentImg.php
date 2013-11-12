@@ -1,70 +1,37 @@
 <?php
-	require_once("cCasualAgentPost.php");
+	require_once("cCasualAgentAttachment.php");
 	
-	class cCasualAgentImg extends cCasualAgentPost{
-		
+	class cCasualAgentImg extends cCasualAgentAttachment{
 		
 		protected static $_metaKey = array(
-			'_img_type' => array('prefix'=>true, 'single'=>true, 'default'=>'no', 'opts'=>array('carousel', 'gallery', 'feature'), 'post_type'=>array('attachment'))
+			'_cls' => array('prefix'=>true, 'single'=>true, 'default'=>'cCasualAgentImg', 'opts'=>array('cCasualAgentImg'), 'post_type'=>array('attachment')),
+			'_img_type' => array('prefix'=>true, 'single'=>true, 'default'=>'gallery', 'opts'=>array('carousel', 'gallery', 'feature'), 'post_type'=>array('attachment'))
 		);
-		function __construct($_post){
+				
+		function attach($parent, $type = 'gallery'){
 			
-			if(is_numeric($_post)){
-				$this->_post = get_post($_post);
-			}else if($_post instanceof WP_Post){
-				$this->_post = $_post;
+			if(parent::attach($parent)){
+				$type = (in_array($type, $this->getMetaKeyCfg('_img_type', 'opts')))?$type:$this->getMetaKeyCfg('_img_type', 'default');
+				$this->setMeta('_img_type', $type);
+				return true;
 			}else{
-				throw new Exception("Must supply post object or post ID to create new instance of cCasualAgentPost");
-			}
-		}
-		
-		function attach($parent, $type){
-			
-			$post = null;
-			if(is_numeric($parent)){
-				$post = WP_Post::get_instance($parent);
-			}else if($parent instanceof WP_Post){
-				$post = $parent;
-			}else{
-				throw new Exception("Must supply post object or post ID to create new instance of cCasualAgentPost");
-			}
-			
-			
-			if(is_null($post) || !$post){
 				return false;
 			}
-			
-			if(!in_array($type, self::$_metaKey['_img_type']['opts'])){
-				$type = 'gallery';
-			}
-			
-			wp_update_post(array('ID'=>$this->ID, 'post_parent'=>$post->ID));
-			
-			$this->_post = get_post($this->ID);
-			$this->setMeta('_img_type', $type);
 			
 		}
 		
 		function detach(){
-			wp_update_post(array('ID'=>$this->ID, 'post_parent'=> null));	
-						$this->_post = get_post($this->ID);
-		}
-		
-		function getParent(){
-			$id = $this->_post->post_parent;
-			return new cCasualAgentPost(get_post($id));
+			if(parent::detach()){
+				$this->setMeta('_img_type', null);
+				return true;
+			}else{
+				return false;
+			}
 		}
 		
 		function __get($prop){
 			
 			switch($prop){
-				
-				/*case 'categories':
-						return $this->getCategories();
-					break;
-				case 'tags':
-						return $this->getTags();
-					break;*/
 				case 'ID':
 					return $this->_post->ID;
 				case 'data':
