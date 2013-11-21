@@ -3,10 +3,15 @@
 	define('theCasualAgent_catID', 0);
 	define('theCasualAgent_postThumbnailWidth', 300);
 	
-	require_once("lib/simple_html_dom.php");
+	if(!function_exists('file_get_html')){
+		require_once("lib/simple_html_dom.php");
+	}
+	require_once("lib/PorterStemmer.php");
 	require_once("cls/cPostMeta.php");
 	require_once("cls/cCasualAgentPost.php");
 	require_once("cls/cCasualAgentImg.php");
+	require_once("cls/cPostScore.php");
+	require_once("cls/cPost.php");
 	require_once("cfg/menu_categories.cfg.php");
 	
 	
@@ -763,7 +768,7 @@
 		$op = new cCasualAgentPost($post);
 		$isFeatured = $op->getMeta('_is_featured');
 		$isFeatured = ($isFeatured == 'yes') ? true:false;
-		$isFeatured_chkBox = get_ca_featured_post_chkbox($op, 'Featured Post');
+		$isFeatured_chkBox = get_ca_featured_post_chkbox($op->ID, $isFeatured, 'Featured Post');
 
 		$html = array($isFeatured_chkBox);
 		
@@ -846,16 +851,19 @@
 	}
 	/* Display custom column */
 	function display_posts_featured_status( $column, $post_id ) {
-		echo get_ca_featured_post_chkbox($post_id);
+	$ca = new cCasualAgentPost($post_id);
+	$isFeatured = $ca->getMeta('_is_featured');
+		$isFeatured = ($isFeatured == 'yes') ? true:false;
+		echo get_ca_featured_post_chkbox($post_id, $isFeatured);
 	}
 	add_action( 'manage_posts_custom_column' , 'display_posts_featured_status', 10, 2 );
 	
-	function get_ca_featured_post_chkbox($ca, $label = null){
+	function get_ca_featured_post_chkbox($post_ID, $isFeatured, $label = null){
 
-		$checked = ($ca->getMeta('_is_featured') == 'yes')? "checked" : "";
+		$checked = ($isFeatured)? "checked" : "";
 	    
 	    $label = (!is_null($label) && !empty($label))?"<label for='ca_is_featured'>Featured Post</label>":"";
-	    return '<input name="ca_is_featured" class="chkbox_ca_is_featured" data-post-id="'.$ca->ID.'" type="checkbox" '.$checked.' />&nbsp;&nbsp;'.$label;
+	    return '<input name="ca_is_featured" class="chkbox_ca_is_featured" data-post-id="'.$post_ID.'" type="checkbox" '.$checked.' />&nbsp;&nbsp;'.$label;
 	}
 	/* Add custom column to post list */
 	function add_posts_featured_status( $columns ) {
@@ -1181,6 +1189,99 @@
 		die();
 	}
 	
+	
+	function tally_posts(){
+		
+		global $wpdb;
+		//$fn = get_class_methods($wpdb);
+		$ret = array();
+		$ids = $wpdb->get_col("CALL getPostsToTally();", 0);		
+		$wpdb->flush();
+		$wpdb->db_connect();
+		//$args = array('fields'=>'all', 'post__in'=>$ids, 'post_type'=>'post', 'post_status'=>'any', 'posts_per_page'=>-1);
+		
+		//$qry = new WP_Query($args);		
+		
+		//$posts = $qry->get_posts($args);
+		
+		
+		foreach($ids as $id){
+			$ps = new cPostScore(get_post(intval($id)));
+			$ps->process_stopwords();
+			$ps->stem();
+			$ps->clean(false);
+			$ps->tally();
+			$ps->write_tally();
+			
+			$ret[]=$ps;
+		}
+		
+		echo json_encode($ret); die();
+	}
+	
+	
+	function score_post(){
+		global $wpdb;
+		$ID = $_REQUEST['ID'];
+		$pst = get_post($ID);
+		$ps = new cPostScore($pst);
+		
+		$ps->process_stopwords();
+		$ps->stem();
+		$ps->clean();
+		$t = $ps->tally();
+		$ps->write_tally();
+		echo json_encode(array($t, $wpdb));
+		
+		die();
+	}
+	
+	
+	function process_posts(){
+		$args = array('fields'=>'all', 'post_type'=>'post', 'post_status'=>'publish', 'posts_per_page'=>-1);
+		
+		$qry = new WP_Query($args);
+		$posts = $qry->get_posts($args);
+		
+		$ret = array();
+		$tally = array();
+		
+		$cp = array();
+		foreach($posts as $pst){
+			$ps = new cPost($pst);
+			$ws = $ps->extract_words();
+			
+			$ps->write_words();
+			
+			$tally = array_merge_recursive($tally, $ps->tally());
+			
+			$cp[] = $ps;
+		}
+		
+		$wt = array();
+		foreach($tally as $w => $t){
+			if(is_array($t)){
+				$df = count($t);
+				$wt[$w] = $df;
+			}else{
+				$wt[$w] = 1;
+			}
+		}
+
+		
+		foreach($cp as $ps){
+			$ww = $ps->generate_tags($wt, count($cp));
+			$ret[] = array('ID'=>$ps->_post->ID, 'tags'=>$ww);
+		}
+		
+				$ret['ta'] = $tally;
+		$ret['df'] = $wt;
+		
+		echo json_encode($ret); die();
+	}
+	add_action('wp_ajax_process_posts', 'process_posts');
+	add_action('wp_ajax_score_post', 'score_post');
+	add_action('wp_ajax_tally_posts', 'tally_posts');
 	add_action('wp_ajax_set_ca_post_feature_status', 'set_ca_featured_status');
 	add_action('wp_ajax_set_ca_carousel_img', 'set_ca_carousel_img');
 	add_action('wp_ajax_set_ca_post_meta', 'set_ca_post_meta');

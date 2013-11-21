@@ -15,7 +15,7 @@ function ajax_action(data, method, cb){
 			}
 			console.debug(cb);
 		}
-		cb = function(){console.debug(arguments);}
+		cbc = function(){console.debug(arguments);}
 		
 		
 		method = method || 'GET';
@@ -24,6 +24,7 @@ function ajax_action(data, method, cb){
 			  url: "/blog/wp-admin/admin-ajax.php",
 			  data: data,
 			  success: cb,
+			  complete: cbc,
 			  dataType: 'json'
 			});		
 	}
