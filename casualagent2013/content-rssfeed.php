@@ -1,6 +1,7 @@
 <?php
-
-	$post = new cCasualAgentPost($post);
+	global $post, $mpost;
+	
+	$post = $mpost->post;
 	$src = get_syndication_source();
 	$dom = str_get_html($post->post_content);
 	$rssCls = 'rss-default';
@@ -8,10 +9,12 @@
 		case 'The FADER':
 			$rssCls = 'rss-fader';
 		default:
+			
 			/*$imgTags = extract_tags('img', $post->post_content);
 			$imgTags = find_display_img($imgTags);
 			$display_img = (count($imgTags)>0)?array_shift($imgTags):null;
 			$display_img_tag = is_array($display_img)?"<img src='".$display_img['src']."' width='300' height='auto'/>":"";*/
+			if($dom){
 			$imgTags = $dom->find('img');
 			$display_img = $imgTags[0];
 			$display_img_tag = isset($display_img->src)?"<img class='post-content-img' src='".$display_img->src."' width='300' height='auto'/>":"";
@@ -28,11 +31,12 @@
 			foreach($els as $el){
 				$el->outertext='';
 			}
+			}
 		break;
 			
 	}
 
-$cats = $post->getCategories();
+$cats = $mpost->_terms['category'];
 
 /*if(empty($cats)){
 	$cat = get_current_category();
@@ -46,7 +50,7 @@ foreach($cats as $cat){
 }
 $cat_html = implode("\n<span class='delimiter'>|</span>\n", $cat_html);
 
-$link = get_permalink( $post->ID );
+$link = get_permalink( $mpost->ID );
 $title  = html_entity_decode($post->post_title);
 //$excerpt = strip_tags($post->post_content, '<strong><a>');
 $excerpt = $dom->outertext;

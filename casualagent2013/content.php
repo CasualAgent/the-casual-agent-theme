@@ -4,8 +4,9 @@
 		echo "<h1>SINGLE</h1>";
 		$html = $post->post_content;
 	}else{
-		$post = new cCasualAgentPost($post);
-		$cats = $post->getCategories();
+		
+		$cats = $mpost->_terms['category'];
+		$post = $mpost->post;
 		
 		$cat_html = array();
 		foreach($cats as $cat){
@@ -25,7 +26,7 @@
 			$tag_html = implode(",", $tag_html);
 			$tag_html  = "<span class='tag'>$tag_html</span>";
 				
-		$time_tag = get_age($post->post_date);
+//		$time_tag = get_age($post->post_date);
 		$img = get_the_post_thumbnail( $post->ID, array(300, 'auto'));
 		if(empty($img)){
 			$dom = str_get_html($post->post_content);
@@ -34,8 +35,8 @@
 			$img = isset($display_img->src)?"<img class='post-content-img' src='".$display_img->src."' width='300' height='auto'/>":"";
 		}
 		
-		$attr = tag_attr($img);	
-		$maxH = intval($attr['height'])."px";
+		//$attr = tag_attr($img);	
+		//$maxH = intval($attr['height'])."px";
 		$href = get_permalink( $post->ID );
 		
 		$excerpt = (strlen(trim($post->post_excerpt))>10) ? "<div class='excerpt'>".$post->post_excerpt."</div><div class='actions'>

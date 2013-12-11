@@ -245,13 +245,24 @@
 				
 		}
 		
-		function getMeta($key){
+		function getMeta($key='allca'){
 		
 			if($key == 'all'){
 				return get_post_meta($this->_post->ID);
 			}
+			
+			$self = get_called_class();			
+			
+			if($key == 'allca'){
+				$keys = array_keys($self::$_metaKey);
+				$meta = array_fill_keys($keys,'');
+				foreach($keys as $mKey){
+					$meta[$mKey] = $this->getMeta($mKey);
+				}
+				return $meta;
+			}
 			$mKey = $this->getKeyName($key);
-			$self = get_called_class();
+
 			$val = get_post_meta($this->_post->ID, $mKey, $self::$_metaKey[$key]['single']);
 			
 			if(empty($val)){

@@ -33,7 +33,6 @@
 	/******************Scripts/Styles**********************************/
 	function casualagent_scripts_styles(){	
 		wp_enqueue_style( 'casualagent-style', get_stylesheet_uri());
-		
 		wp_enqueue_script('jquery');
 		wp_enqueue_script('jquery-ui-core');
 		wp_enqueue_script('imagesLoaded', get_template_directory_uri()."/js/imagesLoaded.min.js", array('jquery','jquery-ui-core'));

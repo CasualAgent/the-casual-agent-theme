@@ -1,9 +1,12 @@
 <?php
-	global $CA_MENU_CATEGORIES;
+	/*global $CA_MENU_CATEGORIES;
 	//update_menu_cfg();
-	init_menu_categories();
+	init_menu_categories();*/
 	
-	$categories = $CA_MENU_CATEGORIES;
+/*	$categories = $CA_MENU_CATEGORIES;*/
+
+	$TH = ThemeInstance();
+	$categories = $TH->getMenu();
 	
 		
 	$menuItems = array();	
@@ -52,3 +55,4 @@
 	</nav>
 	<div class='clearfix'></div>
 </section>
+
